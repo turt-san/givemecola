@@ -6,7 +6,6 @@
     let offers = $state<Offer[]>([]);
     let offerIndex = $state(0);
     const offer = $derived(offers[offerIndex]);
-    const expiresAt = $derived(new Date(offer.run_till));
 
     const amountInSI = $derived(
         offer.quantity.pieces.to *
@@ -30,6 +29,16 @@
         offerIndex = 0;
         offers = await client.fetchQuery(query);
     };
+
+    const dateToDaysAndHours = (millis: number) => {
+        const totalHours = millis / 1000 / 60 / 60;
+        const hours = totalHours % 24;
+        const days = (totalHours - hours) / 24;
+        return { totalHours, hours, days };
+    };
+
+    const expiresAt = $derived(new Date(offer.run_till));
+    const expiresAtTable = $derived(dateToDaysAndHours(expiresAt - Date.now()));
 
     const dragBinding = new BindDragAnimation(
         {},
@@ -67,39 +76,40 @@
     });
 </script>
 
+<form
+    id="search-bar-form"
+    action="submit"
+    onsubmit={(e) => {
+        e.preventDefault();
+        getOffers();
+    }}
+>
+    <input id="search-bar" type="text" bind:value={query} />
+</form>
 <div class="main-container">
     <div class="sub-container">
-        <form
-            id="search-bar-form"
-            action="submit"
-            onsubmit={(e) => {
-                e.preventDefault();
-                getOffers();
-            }}
-        >
-            <input id="search-bar" type="text" bind:value={query} />
-        </form>
         {#if offer}
             <div class="post">
+                <div class="store-logo">
+                    <img src={offer.branding.logo} alt="" />
+                </div>
                 <div class="thumb" {@attach dragBinding.bind}>
                     <button class="left-right-buttons left">Left</button>
                     <img id="main-image" src={offer.images.thumb} alt="" />
                     <button class="left-right-buttons right">Right</button>
                 </div>
-                <div class="store-logo">
-                    <img src={offer.branding.logo} alt="" />
-                </div>
-                <p>
-                    {`The price for this item is: ${offer.pricing.price} ${offer.pricing.currency}`}
+                <p class="price-display">
+                    {`${offer.pricing.price.toFixed(2)} ${offer.pricing.currency}`}
                 </p>
-                <p>
-                    {priceTable.perLiter.toFixed(2)}
+                <p class="price-per-piece-display">
+                    {`${priceTable.perLiter.toFixed(2)} DKK / liter`}
                 </p>
                 <div class="expiry-container">
+                    <p>Expires at:</p>
                     <p>{expiresAt.toLocaleString()}</p>
                     <br />
                     <p>
-                        {(expiresAt - Date.now()) / 1000 / 60 / 60 / 60}
+                        {`${expiresAtTable.days.toFixed(0)} days and ${expiresAtTable.hours.toFixed(2)} hours left`}
                     </p>
                 </div>
             </div>
@@ -108,6 +118,10 @@
 </div>
 
 <style>
+    :root {
+        --default-border-radius: 1rem;
+    }
+
     #search-bar-form {
         width: 5%;
     }
@@ -117,22 +131,19 @@
     }
 
     .main-container {
-        width: 100%;
         height: 100%;
-    }
-
-    .sub-container {
         width: 100%;
-        height: 100%;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
     }
 
-    .post {
-        height: 100%;
-        position: relative;
+    .sub-container {
+        font-family: "Lato";
+        width: 30%;
+        height: 90%;
+        background-color: oklch(0.8294 0.2072 154.59);
+        border-radius: var(--default-border-radius);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -147,25 +158,46 @@
         max-height: 10%;
     }
 
+    .price-display {
+        margin: 0;
+        font-size: 200%;
+        border-radius: calc(var(--default-border-radius) * 0.5);
+        background-color: white;
+        padding: 0.2rem;
+    }
+
+    .post {
+        height: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
     img {
         max-width: 100%;
         max-height: 100%;
-        box-sizing: content-box;
+        box-sizing: border-box;
     }
 
     .thumb {
-        height: 60%;
+        max-height: 40%;
+        margin-block: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
     .thumb img {
+        background-color: oklch(0.8294 0.3182 142.94);
+        padding: 1rem;
+        border-radius: var(--default-border-radius);
         margin: auto;
     }
 
     .left-right-buttons {
-        opacity: 0.2;
+        opacity: 0;
         padding: 0;
         margin: 0;
         position: absolute;

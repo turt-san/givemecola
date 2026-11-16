@@ -9,3 +9,12 @@
 </svelte:head>
 
 {@render children()}
+
+<style>
+    @font-face {
+        font-family: "Lato";
+        src: url("/fonts/Lato-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+    }
+</style>
