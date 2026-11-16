@@ -187,6 +187,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: transform 300ms;
+    }
+
+    .thumb:hover {
+        cursor: grab;
+        transform: scale(1.05);
     }
 
     .thumb img {
@@ -197,7 +203,8 @@
     }
 
     .left-right-buttons {
-        opacity: 0;
+        visibility: hidden;
+        opacity: 0.5;
         padding: 0;
         margin: 0;
         position: absolute;
