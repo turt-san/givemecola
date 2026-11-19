@@ -72,11 +72,23 @@
         offerIndex = ni;
     }
 
+    const dbonerror = (event) => {
+        // note.appendChild(document.createElement("li")).textContent =
+        //     "Error loading database.";
+    };
+
     onMount(async () => {
         query = localStorage.getItem("query") || "æg";
         mounted = true;
         await getOffers();
         console.log(offers);
+        const DBOpenRequest = window.indexedDB.open("savedOffers", 1);
+
+        DBOpenRequest.onerror = dbonerror;
+
+        DBOpenRequest.onupgradeneeded = (event) => {
+            const db = event.target.result;
+        };
     });
 </script>
 
