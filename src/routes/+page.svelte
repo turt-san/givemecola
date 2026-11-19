@@ -3,16 +3,18 @@
     import { BindDragAnimation } from "limbda/bindings";
     import { onMount } from "svelte";
 
+    let mounted = false;
+    let query = $state("");
+
     let offers = $state<Offer[]>([]);
     let offerIndex = $state(0);
-    const offer = $derived(offers[offerIndex]);
 
+    const offer = $derived(offers[offerIndex]);
     const amountInSI = $derived(
         offer.quantity.pieces.to *
             offer.quantity.size.to *
             offer.quantity.unit.si.factor,
     );
-
     const priceTable = $derived({
         // total cans * liter in can (normalized to SI)
         perLiter: offer.pricing.price / amountInSI,
@@ -20,9 +22,15 @@
 
     const client = new EtilbudsavisClient();
 
-    let mounted = false;
+    const dateToDaysAndHours = (millis: number) => {
+        const totalHours = millis / 1000 / 60 / 60;
+        const hours = totalHours % 24;
+        const days = (totalHours - hours) / 24;
+        return { totalHours, hours, days };
+    };
 
-    let query = $state("");
+    const expiresAt = $derived(new Date(offer.run_till));
+    const expiresAtTable = $derived(dateToDaysAndHours(expiresAt - Date.now()));
 
     const getOffers = async () => {
         offers = [];
@@ -34,16 +42,6 @@
         const { id } = offer;
         localStorage.setItem(id, JSON.stringify(offer));
     };
-
-    const dateToDaysAndHours = (millis: number) => {
-        const totalHours = millis / 1000 / 60 / 60;
-        const hours = totalHours % 24;
-        const days = (totalHours - hours) / 24;
-        return { totalHours, hours, days };
-    };
-
-    const expiresAt = $derived(new Date(offer.run_till));
-    const expiresAtTable = $derived(dateToDaysAndHours(expiresAt - Date.now()));
 
     const dragBinding = new BindDragAnimation(
         {},
@@ -96,7 +94,12 @@
     <div class="sub-container">
         {#if offer}
             <div class="post">
-                <div class="store-logo">
+                <div
+                    class={[
+                        "store-logo",
+                        `${offer.branding.name.toLowerCase().split(" ").join("-")}`,
+                    ]}
+                >
                     <img src={offer.branding.logo} alt="" />
                 </div>
                 <div class="main-thumb" {@attach dragBinding.bind}>
@@ -179,13 +182,20 @@
 
     .store-logo {
         border-radius: var(--default-border-radius);
-        padding: 0.2rem;
-        background-color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 50%;
         max-height: 10%;
+    }
+
+    .wolt-market {
+        padding: 0.4rem;
+        background-color: white;
+    }
+
+    .bilka {
+        padding: 0.6rem;
+        background-color: white;
     }
 
     .price-display {
@@ -247,6 +257,16 @@
         border-radius: calc(var(--default-border-radius) * 0.8);
         background-color: yellow;
         position: absolute;
+        fill: rgba(0, 0, 0, 0);
+        transition:
+            scale 300ms,
+            fill 300ms;
+    }
+
+    .lucide-star:hover {
+        stroke: oklch(0.8729 0.1653 100.59);
+        fill: rgba(255, 255, 255, 1);
+        scale: 1.3;
     }
 
     .left-right-buttons {
